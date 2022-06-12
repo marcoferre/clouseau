@@ -4,8 +4,9 @@ from pynq import allocate
 
 overlay = Overlay('myOverlay')
 
+
 class Clouseau:
-    def __init__(self, overlay, size, data_type):
+    def __init__(self, overlay, size_a, size_b, size_c, data_type_a, data_type_b, data_type_c):
         self.overlay = overlay
         self.AXILITES_ADDR_AP_CTRL = 0x00
         self.AXILITES_ADDR_GIE = 0x04
@@ -18,11 +19,11 @@ class Clouseau:
         self.AXILITES_ADDR_SIZE_DATA = 0x30
 
         
-        self.buff_a = allocate(size, data_type)
+        self.buff_a = allocate(size_a, data_type_a)
         self.buff_a_addr = self.buff_a.device_address
-        self.buff_b = allocate(size, data_type)
+        self.buff_b = allocate(size_b, data_type_b)
         self.buff_b_addr = self.buff_b.device_address
-        self.buff_c = allocate(size, data_type)
+        self.buff_c = allocate(size_c, data_type_c)
         self.buff_c_addr = self.buff_c.device_address
 
 
@@ -48,9 +49,9 @@ class Clouseau:
 
 
     
-    def write_d_address(self, data):
+    def write_d(self, data):
         self.overlay.write(self.AXILITES_ADDR_D_DATA, data)
-    def write_size_address(self, data):
+    def write_size(self, data):
         self.overlay.write(self.AXILITES_ADDR_SIZE_DATA, data)
 
     def compute(self):

@@ -5,7 +5,7 @@ from pynq import allocate
 overlay = Overlay('myOverlay')
 
 class Clouseau:
-    def __init__(self, overlay, size, data_type):
+    def __init__(self, overlay {%- for aximaster in aximasters -%}, size_{{aximaster.port}} {%- endfor -%} {%- for aximaster in aximasters -%}, data_type_{{aximaster.port}} {%- endfor -%}):
         self.overlay = overlay
         self.AXILITES_ADDR_AP_CTRL = 0x00
         self.AXILITES_ADDR_GIE = 0x04
@@ -17,7 +17,7 @@ class Clouseau:
         {%- endfor %}
 
         {% for aximaster in aximasters %}
-        self.buff_{{aximaster.port}} = allocate(size, data_type)
+        self.buff_{{aximaster.port}} = allocate(size_{{aximaster.port}}, data_type_{{aximaster.port}})
         self.buff_{{aximaster.port}}_addr = self.buff_{{aximaster.port}}.device_address
         {%- endfor %}
 
@@ -37,7 +37,7 @@ class Clouseau:
 
     {% for axilite in axilites %}
     {%- if axilite.type=='axilite' %}
-    def write_{{axilite.port}}_address(self, data):
+    def write_{{axilite.port}}(self, data):
         self.overlay.write(self.AXILITES_ADDR_{{ axilite.port.upper() }}_DATA, data)
     {%- endif %}
     {%- endfor %}

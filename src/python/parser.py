@@ -19,7 +19,7 @@ for line in lines:
         parts = line.split()
         # parse all parameters
         for el in parts[4:]:
-            #TODO parse also parameters without =
+            #TODO parse also parameters without = for axistream
             key, value = el.split('=')
             params[key] = value
 
