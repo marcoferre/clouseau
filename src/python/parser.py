@@ -30,9 +30,22 @@ for line in lines:
         #if is axi lite definition
         elif parts[3] == "s_axilite":
             #if is not return ip compute the address for each axilite
+            if any(aximaster['port'] == params['port'] for aximaster in aximaster_list):
+                params['type'] = 'aximaster'
+            else:
+                params['type'] = 'axilite'
             if params['port'] != 'return':
                 params['address'] = hex(BASE_ADDRESS)
                 BASE_ADDRESS += 0x8
-            axilite_list.append(params)
+                axilite_list.append(params)
 
-print(axilite_list)
+### GENERATOR ###
+
+from jinja2 import Environment, FileSystemLoader
+file_loader = FileSystemLoader('python/templates')
+env = Environment(loader=file_loader)
+template = env.get_template('template.txt')
+output = template.render(axilites=axilite_list, aximasters=aximaster_list)
+
+with open("python/out/out.py", "w") as text_file:
+    text_file.write(output)
