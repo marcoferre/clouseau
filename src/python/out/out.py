@@ -18,7 +18,7 @@ class Clouseau:
         self.AXILITES_ADDR_D_DATA = 0x28
         self.AXILITES_ADDR_SIZE_DATA = 0x30
 
-        
+
         self.buff_a = allocate(size_a, data_type_a)
         self.buff_a_addr = self.buff_a.device_address
         self.buff_b = allocate(size_b, data_type_b)
