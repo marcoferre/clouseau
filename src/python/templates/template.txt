@@ -5,7 +5,7 @@ from pynq import allocate
 overlay = Overlay('myOverlay')
 
 class Clouseau:
-    def __init__(self, overlay {%- for aximaster in aximasters -%}, size_{{aximaster.port}} {%- endfor -%} {%- for aximaster in aximasters -%}, data_type_{{aximaster.port}} {%- endfor -%}):
+    def __init__(self, overlay {%- for aximaster in aximasters -%}, size_{{aximaster.port}} {%- endfor -%} {%- for aximaster in aximasters -%}, data_type_{{aximaster.port}} {%- endfor -%} {%- for axistream in axistreams -%}, size_{{axistream.port}} {%- endfor -%} {%- for axistream in axistreams -%}, data_type_{{axistream.port}} {%- endfor -%} {%- for axistream in axistreams -%}, win_{{axistream.port}} {%- endfor -%}):
         self.overlay = overlay
         self.AXILITES_ADDR_AP_CTRL = 0x00
         self.AXILITES_ADDR_GIE = 0x04
@@ -21,11 +21,41 @@ class Clouseau:
         self.buff_{{aximaster.port}}_addr = self.buff_{{aximaster.port}}.device_address
         {%- endfor %}
 
+        {% for axistream in axistreams%}
+        {%- if axistream.type == 'in'%}
+        self.size_{{axistream.port}} = size_{{axistream.port}}
+        self.win_{{axistream.port}} = win_{{axistream.port}}
+        self.buff_{{axistream.port}} = allocate(size_{{axistream.port}} + 2, data_type_{{axistream.port}})
+        {%- elif axistream.type == 'out'%}
+        self.buff_{{axistream.port}} = allocate(size_{{axistream.port}} - win_{{axistream.port}} + 1, data_type_{{axistream.port}})
+        {%- endif %}
+        {%- endfor %}
+
+
 
     {% for aximaster in aximasters %}
     def prepare_{{aximaster.port}}_buffer(self, data):
         self.buff_{{aximaster.port}}[:] = data[:]
         self.buff_{{aximaster.port}}.flush()
+    {%- endfor %}
+
+    {% for axistream in axistreams %}
+    {%- if axistream.type == 'in'%}
+    def prepare_{{axistream.port}}_buffer(self, data):
+        self.buff_{{axistream.port}}[0] = self.size_{{axistream.port}}
+        self.buff_{{axistream.port}}[1:] = self.win_{{axistream.port}}
+        self.buff_{{axistream.port}}[2:] = data[:]
+    {%- endif %}
+    {%- endfor %}
+
+    {% for axistream in axistreams %}
+    {%- if axistream.type == 'in'%}
+        dma.sendchannel.transfer(self.buff_{{axistream.port}})
+        dma.sendchannel.wait()
+    {%- elif axistream.type == 'out'%}
+        dma.recvchannel.transfer(self.buff_{{axistream.port}})
+        dma.recvchannel.wait()
+    {%- endif %}
     {%- endfor %}
 
 
