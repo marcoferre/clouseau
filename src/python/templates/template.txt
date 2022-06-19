@@ -2,10 +2,14 @@ from pynq import Overlay
 import pynq
 from pynq import allocate
 
+overlay = Overlay(overlay)
 
 class Clouseau:
-    def __init__(self, overlay{% for aximaster in aximasters %}, size_{{aximaster.port}}{% endfor %}{% for aximaster in aximasters %}, data_type_{{aximaster.port}}{% endfor %}{% for axistream in axistreams %}, size_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, data_type_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, win_{{axistream.port}}{% endfor %}):
-        self.overlay = Overlay(overlay)
+    def __init__(self, overlay{% if axistreams|length > 0%} ,dma {%endif%}{% for aximaster in aximasters %}, size_{{aximaster.port}}{% endfor %}{% for aximaster in aximasters %}, data_type_{{aximaster.port}}{% endfor %}{% for axistream in axistreams %}, size_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, data_type_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, win_{{axistream.port}}{% endfor %}):
+        self.overlay = overlay
+        {% if axistreams|length > 0%}
+        self.dma = dma
+        {%endif%}
         {% if axilites|length > 0 %}
         self.AXILITES_ADDR_AP_CTRL = 0x00
         self.AXILITES_ADDR_GIE = 0x04
@@ -46,13 +50,13 @@ class Clouseau:
     {% for axistream in axistreams %}
     {% if axistream.type == 'in' %}
     def send_buffer_{{axistream.port}}(self):
-        dma.sendchannel.transfer(self.buff_{{axistream.port}})
-        dma.sendchannel.wait()
+        self.dma.sendchannel.transfer(self.buff_{{axistream.port}})
+        self.dma.sendchannel.wait()
     {% elif axistream.type == 'out' %}
 
     def recv_buffer_{{axistream.port}}(self):
-        dma.recvchannel.transfer(self.buff_{{axistream.port}})
-        dma.recvchannel.wait()
+        self.dma.recvchannel.transfer(self.buff_{{axistream.port}})
+        self.dma.recvchannel.wait()
     {% endif %}
     {% endfor %}
 
@@ -78,4 +82,9 @@ class Clouseau:
     {% for aximaster in aximasters %}
     def get_{{aximaster.port}}_result(self):
         self.buff_{{aximaster.port}}.invalidate()
+    {% endfor %}
+
+    {% for aximaster in aximasters %}
+    def reset_{{aximaster.port}}_result(self):
+        del self.buff_{{aximaster.port}}
     {% endfor %}

@@ -2,74 +2,32 @@ from pynq import Overlay
 import pynq
 from pynq import allocate
 
+overlay = Overlay(overlay)
+
 
 class Clouseau:
 
-    def __init__(self, overlay, size_a, size_b, size_c, data_type_a,
-                 data_type_b, data_type_c):
-        self.overlay = Overlay(overlay)
+    def __init__(self, overlay, dma, size_in, size_out, data_type_in,
+                 data_type_out, win_in, win_out):
+        self.overlay = overlay
 
-        self.AXILITES_ADDR_AP_CTRL = 0x00
-        self.AXILITES_ADDR_GIE = 0x04
-        self.AXILITES_ADDR_IER = 0x08
-        self.AXILITES_ADDR_ISR = 0x0c
+        self.dma = dma
 
-        self.AXILITES_ADDR_A_DATA = 0x10
+        self.size_in = size_in
+        self.win_in = win_in
+        self.buff_in = allocate(size_in + 2, data_type_in)
 
-        self.AXILITES_ADDR_B_DATA = 0x18
+        self.buff_out = allocate(size_out - win_out + 1, data_type_out)
 
-        self.AXILITES_ADDR_C_DATA = 0x20
+    def prepare_in_buffer(self, data):
+        self.buff_in[0] = self.size_in
+        self.buff_in[1:] = self.win_in
+        self.buff_in[2:] = data[:]
 
-        self.AXILITES_ADDR_D_DATA = 0x28
+    def send_buffer_in(self):
+        self.dma.sendchannel.transfer(self.buff_in)
+        self.dma.sendchannel.wait()
 
-        self.AXILITES_ADDR_SIZE_DATA = 0x30
-
-        self.buff_a = allocate(size_a, data_type_a)
-        self.buff_a_addr = self.buff_a.device_address
-
-        self.buff_b = allocate(size_b, data_type_b)
-        self.buff_b_addr = self.buff_b.device_address
-
-        self.buff_c = allocate(size_c, data_type_c)
-        self.buff_c_addr = self.buff_c.device_address
-
-    def prepare_a_buffer(self, data):
-        self.buff_a[:] = data[:]
-        self.buff_a.flush()
-
-    def prepare_b_buffer(self, data):
-        self.buff_b[:] = data[:]
-        self.buff_b.flush()
-
-    def prepare_c_buffer(self, data):
-        self.buff_c[:] = data[:]
-        self.buff_c.flush()
-
-    def write_a_address(self):
-        self.overlay.write(self.AXILITES_ADDR_A_DATA, self.buff_a_addr)
-
-    def write_b_address(self):
-        self.overlay.write(self.AXILITES_ADDR_B_DATA, self.buff_b_addr)
-
-    def write_c_address(self):
-        self.overlay.write(self.AXILITES_ADDR_C_DATA, self.buff_c_addr)
-
-    def write_d(self, data):
-        self.overlay.write(self.AXILITES_ADDR_D_DATA, data)
-
-    def write_size(self, data):
-        self.overlay.write(self.AXILITES_ADDR_SIZE_DATA, data)
-
-    def compute(self):
-        self.overlay.write(self.AXILITES_ADDR_AP_CTRL, 0)
-        while self.overlay.read(self.AXILITES_ADDR_AP_CTRL) & 0x4 != 0x4:
-            pass
-
-    def get_a_result(self):
-        self.buff_a.invalidate()
-
-    def get_b_result(self):
-        self.buff_b.invalidate()
-
-    def get_c_result(self):
-        self.buff_c.invalidate()
+    def recv_buffer_out(self):
+        self.dma.recvchannel.transfer(self.buff_out)
+        self.dma.recvchannel.wait()
