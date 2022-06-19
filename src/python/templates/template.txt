@@ -2,81 +2,80 @@ from pynq import Overlay
 import pynq
 from pynq import allocate
 
-overlay = Overlay('myOverlay')
 
 class Clouseau:
-    def __init__(self, overlay {%- for aximaster in aximasters -%}, size_{{aximaster.port}} {%- endfor -%} {%- for aximaster in aximasters -%}, data_type_{{aximaster.port}} {%- endfor -%} {%- for axistream in axistreams -%}, size_{{axistream.port}} {%- endfor -%} {%- for axistream in axistreams -%}, data_type_{{axistream.port}} {%- endfor -%} {%- for axistream in axistreams -%}, win_{{axistream.port}} {%- endfor -%}):
-        self.overlay = overlay
+    def __init__(self, overlay{% for aximaster in aximasters %}, size_{{aximaster.port}}{% endfor %}{% for aximaster in aximasters %}, data_type_{{aximaster.port}}{% endfor %}{% for axistream in axistreams %}, size_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, data_type_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, win_{{axistream.port}}{% endfor %}):
+        self.overlay = Overlay(overlay)
+        {% if axilites|length > 0 %}
         self.AXILITES_ADDR_AP_CTRL = 0x00
         self.AXILITES_ADDR_GIE = 0x04
         self.AXILITES_ADDR_IER = 0x08
         self.AXILITES_ADDR_ISR = 0x0c
-        
-        {%- for axilite in axilites %}
+        {% for axilite in axilites %}
         self.AXILITES_ADDR_{{ axilite.port.upper() }}_DATA = {{axilite.address}}
-        {%- endfor %}
-
+        {% endfor %}
+        {% endif %}
         {% for aximaster in aximasters %}
         self.buff_{{aximaster.port}} = allocate(size_{{aximaster.port}}, data_type_{{aximaster.port}})
         self.buff_{{aximaster.port}}_addr = self.buff_{{aximaster.port}}.device_address
-        {%- endfor %}
-
-        {% for axistream in axistreams%}
-        {%- if axistream.type == 'in'%}
+        {% endfor %}
+        {% for axistream in axistreams %}
+        {% if axistream.type == 'in' %}
         self.size_{{axistream.port}} = size_{{axistream.port}}
         self.win_{{axistream.port}} = win_{{axistream.port}}
         self.buff_{{axistream.port}} = allocate(size_{{axistream.port}} + 2, data_type_{{axistream.port}})
-        {%- elif axistream.type == 'out'%}
+        {% elif axistream.type == 'out'%}
         self.buff_{{axistream.port}} = allocate(size_{{axistream.port}} - win_{{axistream.port}} + 1, data_type_{{axistream.port}})
-        {%- endif %}
-        {%- endfor %}
-
-
+        {% endif %}
+        {% endfor %}
 
     {% for aximaster in aximasters %}
     def prepare_{{aximaster.port}}_buffer(self, data):
         self.buff_{{aximaster.port}}[:] = data[:]
         self.buff_{{aximaster.port}}.flush()
-    {%- endfor %}
-
+    {% endfor %}
     {% for axistream in axistreams %}
-    {%- if axistream.type == 'in'%}
+    {% if axistream.type == 'in' %}
     def prepare_{{axistream.port}}_buffer(self, data):
         self.buff_{{axistream.port}}[0] = self.size_{{axistream.port}}
         self.buff_{{axistream.port}}[1:] = self.win_{{axistream.port}}
         self.buff_{{axistream.port}}[2:] = data[:]
-    {%- endif %}
-    {%- endfor %}
+    {% endif %}
+    {% endfor %}
 
     {% for axistream in axistreams %}
-    {%- if axistream.type == 'in'%}
+    {% if axistream.type == 'in' %}
+    def send_buffer_{{axistream.port}}(self):
         dma.sendchannel.transfer(self.buff_{{axistream.port}})
         dma.sendchannel.wait()
-    {%- elif axistream.type == 'out'%}
+    {% elif axistream.type == 'out' %}
+
+    def recv_buffer_{{axistream.port}}(self):
         dma.recvchannel.transfer(self.buff_{{axistream.port}})
         dma.recvchannel.wait()
-    {%- endif %}
-    {%- endfor %}
-
+    {% endif %}
+    {% endfor %}
 
     {% for aximaster in aximasters %}
     def write_{{aximaster.port}}_address(self):
         self.overlay.write(self.AXILITES_ADDR_{{ aximaster.port.upper() }}_DATA, self.buff_{{aximaster.port}}_addr)
-    {%- endfor %}
-
+    {% endfor %}
 
     {% for axilite in axilites %}
-    {%- if axilite.type=='axilite' %}
+    {% if axilite.type=='axilite' %}
     def write_{{axilite.port}}(self, data):
         self.overlay.write(self.AXILITES_ADDR_{{ axilite.port.upper() }}_DATA, data)
-    {%- endif %}
-    {%- endfor %}
+    {% endif %}
+    {% endfor %}
 
+    {% if axilites|length > 0 %}
     def compute(self):
         self.overlay.write(self.AXILITES_ADDR_AP_CTRL, 0)
         while self.overlay.read(self.AXILITES_ADDR_AP_CTRL) & 0x4 != 0x4:
             pass
+    {% endif %}
+
     {% for aximaster in aximasters %}
     def get_{{aximaster.port}}_result(self):
         self.buff_{{aximaster.port}}.invalidate()
-    {%- endfor %}
+    {% endfor %}
