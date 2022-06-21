@@ -1,12 +1,14 @@
 from pynq import Overlay
 import pynq
 from pynq import allocate
+import numpy as np
 
-overlay = Overlay(overlay)
+overlay = Overlay("./design_1_wrapper.bit")
 
 class Clouseau:
-    def __init__(self, overlay{% if axistreams|length > 0%} ,dma {%endif%}{% for aximaster in aximasters %}, size_{{aximaster.port}}{% endfor %}{% for aximaster in aximasters %}, data_type_{{aximaster.port}}{% endfor %}{% for axistream in axistreams %}, size_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, data_type_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, win_{{axistream.port}}{% endfor %}):
+    def __init__(self, overlay, ip{% if axistreams|length > 0%} ,dma {%endif%}{% for aximaster in aximasters %}, size_{{aximaster.port}}{% endfor %}{% for aximaster in aximasters %}, data_type_{{aximaster.port}}{% endfor %}{% for axistream in axistreams %}, size_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, data_type_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, win_{{axistream.port}}{% endfor %}):
         self.overlay = overlay
+        self.ip = ip
         {% if axistreams|length > 0%}
         self.dma = dma
         {%endif%}
@@ -62,20 +64,20 @@ class Clouseau:
 
     {% for aximaster in aximasters %}
     def write_{{aximaster.port}}_address(self):
-        self.overlay.write(self.AXILITES_ADDR_{{ aximaster.port.upper() }}_DATA, self.buff_{{aximaster.port}}_addr)
+        self.ip.write(self.AXILITES_ADDR_{{ aximaster.port.upper() }}_DATA, self.buff_{{aximaster.port}}_addr)
     {% endfor %}
 
     {% for axilite in axilites %}
     {% if axilite.type=='axilite' %}
     def write_{{axilite.port}}(self, data):
-        self.overlay.write(self.AXILITES_ADDR_{{ axilite.port.upper() }}_DATA, data)
+        self.ip.write(self.AXILITES_ADDR_{{ axilite.port.upper() }}_DATA, data{% if axilite.datatype == 'float'%}.tobytes(){%endif%})
     {% endif %}
     {% endfor %}
 
     {% if axilites|length > 0 %}
     def compute(self):
-        self.overlay.write(self.AXILITES_ADDR_AP_CTRL, 0)
-        while self.overlay.read(self.AXILITES_ADDR_AP_CTRL) & 0x4 != 0x4:
+        self.ip.write(self.AXILITES_ADDR_AP_CTRL, 1)
+        while self.ip.read(self.AXILITES_ADDR_AP_CTRL) & 0x4 != 0x4:
             pass
     {% endif %}
 
