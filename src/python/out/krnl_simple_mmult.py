@@ -8,10 +8,11 @@ overlay = Overlay("./design_1_wrapper.bit")
 
 class Krnl_simple_mmult:
 
-    def __init__(self, ip, size_a, size_b, size_c, size_d, size_output,
-                 data_type_a, data_type_b, data_type_c, data_type_d,
-                 data_type_output):
+    def __init__(self, platform, ip, size_a, size_b, size_c, size_d,
+                 size_output, data_type_a, data_type_b, data_type_c,
+                 data_type_d, data_type_output):
         self.ip = ip
+        self.platform = platform
 
         self.AXILITES_ADDR_AP_CTRL = 0x00
         self.AXILITES_ADDR_GIE = 0x04
@@ -46,47 +47,73 @@ class Krnl_simple_mmult:
         self.buff_output_addr = self.buff_output.device_address
 
     def prepare_a_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_a[:] = data[:]
         self.buff_a.flush()
 
     def prepare_b_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_b[:] = data[:]
         self.buff_b.flush()
 
     def prepare_c_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_c[:] = data[:]
         self.buff_c.flush()
 
     def prepare_d_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_d[:] = data[:]
         self.buff_d.flush()
 
     def prepare_output_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_output[:] = data[:]
         self.buff_output.flush()
 
     def write_a_address(self):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_A_DATA, self.buff_a_addr)
 
     def write_b_address(self):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_B_DATA, self.buff_b_addr)
 
     def write_c_address(self):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_C_DATA, self.buff_c_addr)
 
     def write_d_address(self):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_D_DATA, self.buff_d_addr)
 
     def write_output_address(self):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_OUTPUT_DATA, self.buff_output_addr)
 
     def write_dim(self, data):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_DIM_DATA, data)
 
     def execute(self):
-        self.ip.write(self.AXILITES_ADDR_AP_CTRL, 1)
-        while self.ip.read(self.AXILITES_ADDR_AP_CTRL) & 0x4 != 0x4:
-            pass
+        if self.platform == 'Alveo':
+            self.ip.call(self.buff_a, self.buff_b, self.buff_c, self.buff_d,
+                         self.buff_output)
+        else:
+            self.ip.write(self.AXILITES_ADDR_AP_CTRL, 1)
+            while self.ip.read(self.AXILITES_ADDR_AP_CTRL) & 0x4 != 0x4:
+                pass
 
     def get_a_result(self):
         self.buff_a.invalidate()
@@ -149,4 +176,4 @@ class Krnl_simple_mmult:
 
         self.get_output_result()
 
-        return 0, self.buff_output
+        return self.buff_output

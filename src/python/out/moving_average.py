@@ -8,9 +8,10 @@ overlay = Overlay("./design_1_wrapper.bit")
 
 class Moving_average:
 
-    def __init__(self, ip, dma, size_in, size_out, data_type_in, data_type_out,
-                 win_in, win_out):
+    def __init__(self, platform, ip, dma, size_in, size_out, data_type_in,
+                 data_type_out, win_in, win_out):
         self.ip = ip
+        self.platform = platform
 
         self.dma = dma
 
@@ -21,6 +22,8 @@ class Moving_average:
         self.buff_out = allocate(size_out - win_out + 1, data_type_out)
 
     def prepare_in_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_in[0] = self.size_in
         self.buff_in[1:] = self.win_in
         self.buff_in[2:] = data[:]
@@ -41,4 +44,4 @@ class Moving_average:
 
         self.recv_buffer_out()
 
-        return 0, self.buff_out
+        return self.buff_out

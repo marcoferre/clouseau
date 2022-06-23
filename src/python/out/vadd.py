@@ -8,9 +8,10 @@ overlay = Overlay("./design_1_wrapper.bit")
 
 class Vadd:
 
-    def __init__(self, ip, size_in1, size_in2, size_out, data_type_in1,
-                 data_type_in2, data_type_out):
+    def __init__(self, platform, ip, size_in1, size_in2, size_out,
+                 data_type_in1, data_type_in2, data_type_out):
         self.ip = ip
+        self.platform = platform
 
         self.AXILITES_ADDR_AP_CTRL = 0x00
         self.AXILITES_ADDR_GIE = 0x04
@@ -35,33 +36,50 @@ class Vadd:
         self.buff_out_addr = self.buff_out.device_address
 
     def prepare_in1_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_in1[:] = data[:]
         self.buff_in1.flush()
 
     def prepare_in2_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_in2[:] = data[:]
         self.buff_in2.flush()
 
     def prepare_out_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_out[:] = data[:]
         self.buff_out.flush()
 
     def write_in1_address(self):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_IN1_DATA, self.buff_in1_addr)
 
     def write_in2_address(self):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_IN2_DATA, self.buff_in2_addr)
 
     def write_out_address(self):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_OUT_DATA, self.buff_out_addr)
 
     def write_size(self, data):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_SIZE_DATA, data)
 
     def execute(self):
-        self.ip.write(self.AXILITES_ADDR_AP_CTRL, 1)
-        while self.ip.read(self.AXILITES_ADDR_AP_CTRL) & 0x4 != 0x4:
-            pass
+        if self.platform == 'Alveo':
+            self.ip.call(self.buff_in1, self.buff_in2, self.buff_out)
+        else:
+            self.ip.write(self.AXILITES_ADDR_AP_CTRL, 1)
+            while self.ip.read(self.AXILITES_ADDR_AP_CTRL) & 0x4 != 0x4:
+                pass
 
     def get_in1_result(self):
         self.buff_in1.invalidate()
@@ -102,4 +120,4 @@ class Vadd:
 
         self.get_out_result()
 
-        return 0, self.buff_out
+        return self.buff_out

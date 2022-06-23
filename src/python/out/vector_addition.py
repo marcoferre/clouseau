@@ -8,9 +8,10 @@ overlay = Overlay("./design_1_wrapper.bit")
 
 class Vector_addition:
 
-    def __init__(self, ip, size_a, size_b, size_c, data_type_a, data_type_b,
-                 data_type_c):
+    def __init__(self, platform, ip, size_a, size_b, size_c, data_type_a,
+                 data_type_b, data_type_c):
         self.ip = ip
+        self.platform = platform
 
         self.AXILITES_ADDR_AP_CTRL = 0x00
         self.AXILITES_ADDR_GIE = 0x04
@@ -37,36 +38,55 @@ class Vector_addition:
         self.buff_c_addr = self.buff_c.device_address
 
     def prepare_a_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_a[:] = data[:]
         self.buff_a.flush()
 
     def prepare_b_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_b[:] = data[:]
         self.buff_b.flush()
 
     def prepare_c_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_c[:] = data[:]
         self.buff_c.flush()
 
     def write_a_address(self):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_A_DATA, self.buff_a_addr)
 
     def write_b_address(self):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_B_DATA, self.buff_b_addr)
 
     def write_c_address(self):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_C_DATA, self.buff_c_addr)
 
     def write_d(self, data):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_D_DATA, data)
 
     def write_size(self, data):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_SIZE_DATA, data)
 
     def execute(self):
-        self.ip.write(self.AXILITES_ADDR_AP_CTRL, 1)
-        while self.ip.read(self.AXILITES_ADDR_AP_CTRL) & 0x4 != 0x4:
-            pass
+        if self.platform == 'Alveo':
+            self.ip.call(self.buff_a, self.buff_b, self.buff_c)
+        else:
+            self.ip.write(self.AXILITES_ADDR_AP_CTRL, 1)
+            while self.ip.read(self.AXILITES_ADDR_AP_CTRL) & 0x4 != 0x4:
+                pass
 
     def get_a_result(self):
         self.buff_a.invalidate()
@@ -109,4 +129,4 @@ class Vector_addition:
 
         self.get_a_result()
 
-        return 0, self.buff_a
+        return self.buff_a,

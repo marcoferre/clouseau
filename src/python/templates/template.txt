@@ -6,8 +6,9 @@ import numpy as np
 overlay = Overlay("./design_1_wrapper.bit")
 
 class {{ class_name }}:
-    def __init__(self, ip{% if axistreams|length > 0%} ,dma {%endif%}{% for aximaster in aximasters %}, size_{{aximaster.port}}{% endfor %}{% for aximaster in aximasters %}, data_type_{{aximaster.port}}{% endfor %}{% for axistream in axistreams %}, size_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, data_type_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, win_{{axistream.port}}{% endfor %}):
+    def __init__(self, platform, ip{% if axistreams|length > 0%} ,dma {%endif%}{% for aximaster in aximasters %}, size_{{aximaster.port}}{% endfor %}{% for aximaster in aximasters %}, data_type_{{aximaster.port}}{% endfor %}{% for axistream in axistreams %}, size_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, data_type_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, win_{{axistream.port}}{% endfor %}):
         self.ip = ip
+        self.platform = platform
         {% if axistreams|length > 0%}
         self.dma = dma
         {%endif%}
@@ -36,12 +37,16 @@ class {{ class_name }}:
 
     {% for aximaster in aximasters %}
     def prepare_{{aximaster.port}}_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_{{aximaster.port}}[:] = data[:]
         self.buff_{{aximaster.port}}.flush()
     {% endfor %}
     {% for axistream in axistreams %}
     {% if axistream.io_type == 'in' %}
     def prepare_{{axistream.port}}_buffer(self, data):
+        if self.platform == 'Alveo':
+            return
         self.buff_{{axistream.port}}[0] = self.size_{{axistream.port}}
         self.buff_{{axistream.port}}[1:] = self.win_{{axistream.port}}
         self.buff_{{axistream.port}}[2:] = data[:]
@@ -63,21 +68,28 @@ class {{ class_name }}:
 
     {% for aximaster in aximasters %}
     def write_{{aximaster.port}}_address(self):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_{{ aximaster.port.upper() }}_DATA, self.buff_{{aximaster.port}}_addr)
     {% endfor %}
 
     {% for axilite in axilites %}
     {% if axilite.type=='axilite' %}
     def write_{{axilite.port}}(self, data):
+        if self.platform == 'Alveo':
+            return
         self.ip.write(self.AXILITES_ADDR_{{ axilite.port.upper() }}_DATA, data{% if axilite.datatype == 'float'%}.tobytes(){%endif%})
     {% endif %}
     {% endfor %}
 
     {% if axilites|length > 0 %}
     def execute(self):
-        self.ip.write(self.AXILITES_ADDR_AP_CTRL, 1)
-        while self.ip.read(self.AXILITES_ADDR_AP_CTRL) & 0x4 != 0x4:
-            pass
+        if self.platform == 'Alveo':
+            self.ip.call({% for aximaster in aximasters %}self.buff_{{aximaster.port}}{% if not loop.last %}, {% endif %}{%endfor%})
+        else:
+            self.ip.write(self.AXILITES_ADDR_AP_CTRL, 1)
+            while self.ip.read(self.AXILITES_ADDR_AP_CTRL) & 0x4 != 0x4:
+                pass
     {% endif %}
 
     {% for aximaster in aximasters %}
@@ -129,7 +141,7 @@ class {{ class_name }}:
         {% endif %}
         {% endfor %}
 
-        return 0{% for aximaster in aximasters %}{% if aximaster.io_type == 'out' %}, self.buff_{{aximaster.port}}{% endif %}{% endfor %}{% for axistream in axistreams%}{% if axistream.io_type == 'out' %}, self.buff_{{axistream.port}}{% endif %}{%endfor%}
+        return {% for aximaster in aximasters %}{% if aximaster.io_type == 'out' %}self.buff_{{aximaster.port}}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}{% for axistream in axistreams%}{% if axistream.io_type == 'out' %}self.buff_{{axistream.port}}{% if not loop.last %}, {% endif %}{% endif %}{%endfor%}
 
 
 
