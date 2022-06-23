@@ -1,0 +1,5 @@
+//INTERFACES TEMPLATE
+//portname|in/out|datatype_dim(32, 64)
+a|in|32
+b|in|32
+c|out|32
