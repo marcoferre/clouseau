@@ -1,5 +1,3 @@
-
-
 void vector_addition(float *a, float *b, float *c, float d, unsigned int size){
 // AXI Master interfaces for the top function pointer arguments
 // A correct depth is necessary to properly cosimulate the design

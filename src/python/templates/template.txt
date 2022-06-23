@@ -6,8 +6,7 @@ import numpy as np
 overlay = Overlay("./design_1_wrapper.bit")
 
 class Clouseau:
-    def __init__(self, overlay, ip{% if axistreams|length > 0%} ,dma {%endif%}{% for aximaster in aximasters %}, size_{{aximaster.port}}{% endfor %}{% for aximaster in aximasters %}, data_type_{{aximaster.port}}{% endfor %}{% for axistream in axistreams %}, size_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, data_type_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, win_{{axistream.port}}{% endfor %}):
-        self.overlay = overlay
+    def __init__(self, ip{% if axistreams|length > 0%} ,dma {%endif%}{% for aximaster in aximasters %}, size_{{aximaster.port}}{% endfor %}{% for aximaster in aximasters %}, data_type_{{aximaster.port}}{% endfor %}{% for axistream in axistreams %}, size_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, data_type_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, win_{{axistream.port}}{% endfor %}):
         self.ip = ip
         {% if axistreams|length > 0%}
         self.dma = dma
@@ -26,11 +25,11 @@ class Clouseau:
         self.buff_{{aximaster.port}}_addr = self.buff_{{aximaster.port}}.device_address
         {% endfor %}
         {% for axistream in axistreams %}
-        {% if axistream.type == 'in' %}
+        {% if axistream.io_type == 'in' %}
         self.size_{{axistream.port}} = size_{{axistream.port}}
         self.win_{{axistream.port}} = win_{{axistream.port}}
         self.buff_{{axistream.port}} = allocate(size_{{axistream.port}} + 2, data_type_{{axistream.port}})
-        {% elif axistream.type == 'out'%}
+        {% elif axistream.io_type == 'out'%}
         self.buff_{{axistream.port}} = allocate(size_{{axistream.port}} - win_{{axistream.port}} + 1, data_type_{{axistream.port}})
         {% endif %}
         {% endfor %}
@@ -41,7 +40,7 @@ class Clouseau:
         self.buff_{{aximaster.port}}.flush()
     {% endfor %}
     {% for axistream in axistreams %}
-    {% if axistream.type == 'in' %}
+    {% if axistream.io_type == 'in' %}
     def prepare_{{axistream.port}}_buffer(self, data):
         self.buff_{{axistream.port}}[0] = self.size_{{axistream.port}}
         self.buff_{{axistream.port}}[1:] = self.win_{{axistream.port}}
@@ -50,11 +49,11 @@ class Clouseau:
     {% endfor %}
 
     {% for axistream in axistreams %}
-    {% if axistream.type == 'in' %}
+    {% if axistream.io_type == 'in' %}
     def send_buffer_{{axistream.port}}(self):
         self.dma.sendchannel.transfer(self.buff_{{axistream.port}})
         self.dma.sendchannel.wait()
-    {% elif axistream.type == 'out' %}
+    {% elif axistream.io_type == 'out' %}
 
     def recv_buffer_{{axistream.port}}(self):
         self.dma.recvchannel.transfer(self.buff_{{axistream.port}})

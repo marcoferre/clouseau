@@ -1,86 +1,108 @@
 import os
+from os.path import exists
+from pathlib import Path
 from yapf.yapflib.yapf_api import FormatCode
 import re
+import glob
 
 ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+path = ROOT_DIR +"\\hls\\**\\*.cpp"
 
-ip_filename = os.path.join(ROOT_DIR, 'hls', 'aximaster', 'vector_addition.cpp')
-#ip_filename = os.path.join(ROOT_DIR, 'hls', 'axistream', 'moving_average.cpp')
-axistream_list_filename = os.path.join(ROOT_DIR, 'python', 'tools', 'axistream_list')
-ip_file = open(ip_filename, 'r')
-lines = ip_file.readlines()
+for path in glob.glob(path, recursive=True):
+    p = Path(path)
+    ip_filename = path
+    print('RUN ' + ip_filename)
 
-axistream_list_file = open(axistream_list_filename, 'r')
-axistream_list_types = axistream_list_file.readlines()
+    #ip_filename = os.path.join(ROOT_DIR, 'hls', 'aximaster', 'vector_addition.cpp')
+    #ip_filename = os.path.join(ROOT_DIR, 'hls', 'axistream', 'moving_average.cpp')
+    io_template_filename = os.path.join(p.parent, 'io_template')
 
-axilite_list = []
-aximaster_list = []
-axistream_list = []
-
-# set the base custom ip address
-BASE_ADDRESS = 0x10
-
-for line in lines:
-    if line[0:2] == "//":
+    if not exists(io_template_filename):
+        print("      ERR: io_template for " + ip_filename + " not exists: SKIPPED")
         continue
 
-    #regex to parse C++ function definition
-    result = re.search(r"^((\w+[\(\w+\)]([ |\t]+)?(\\R)?){2,})(\([^!@#;$+%^]+?([ |\t]+)?(\\R)?\))(( +)?([ |\t]+)?(\\R)?\{)", line)
-    if result:
-        groups = result.groups()
-        function_name = groups[1]
-        #get name and type
-        variables = [(e[0], e[1].lstrip("*")) for e in [i.rsplit(" ", 1) for i in groups[4].strip("(").strip(")").split(", ")]]
+    ip_file = open(ip_filename, 'r')
+    lines = ip_file.readlines()
 
-    # find comm definition
-    if "#pragma HLS INTERFACE" in line:
-        params = {}
-        parts = line.split()
-        # parse all parameters
-        for el in parts[4:]:
-            if "=" in el:
-                key, value = el.split('=')
-                params[key] = value
-            else:
-                params[el] = 1
+    io_template_file = open(io_template_filename, 'r')
+    io_template = io_template_file.readlines()
 
-        # if is axi stream definition
-        if parts[3] == "axis":
-            axistream_list.append(params)
-        # if is axi master definition
-        if parts[3] == "m_axi":
-            aximaster_list.append(params)
+    io_list = []
+    #parse io template file
+    for line in io_template:
+        if line[0:2] == "//" or line == '\n':
+            continue
+        io_list.append(line.rstrip('\n').split("|"))
 
-        # if is axi lite definition
-        elif parts[3] == "s_axilite":
-            # if is not return ip compute the address for each axilite
-            if any(aximaster['port'] == params['port'] for aximaster in aximaster_list):
-                params['type'] = 'aximaster'
-            else:
-                params['type'] = 'axilite'
-            if params['port'] != 'return':
-                params['address'] = hex(BASE_ADDRESS)
-                params['datatype'] = next(a for a, b in variables if b == params['port'])
-                if params['datatype'] and params['datatype'] == 'double':
-                    BASE_ADDRESS += 0x16
+    axilite_list = []
+    aximaster_list = []
+    axistream_list = []
+
+    # set the base custom ip address
+    BASE_ADDRESS = 0x10
+
+    for line in lines:
+        if line[0:2] == "//":
+            continue
+
+        #regex to parse C++ function definition
+        result = re.search(r"^((\w+[\(\w+\)]([ |\t]+)?(\\R)?){2,})(\([^!@#;$+%^]+?([ |\t]+)?(\\R)?\))(( +)?([ |\t]+)?(\\R)?\{)", line)
+        if result:
+            groups = result.groups()
+            function_name = groups[1]
+
+        # find comm definition
+        if "#pragma HLS INTERFACE" in line:
+            params = {}
+            parts = line.split()
+            # parse all parameters
+            for el in parts[4:]:
+                if "=" in el:
+                    key, value = el.split('=')
+                    params[key.strip()] = str(value).strip()
                 else:
-                    BASE_ADDRESS += 0x8
-                axilite_list.append(params)
+                    params[el.strip()] = 1
 
-if len(axistream_list) > 0:
-    for idx in range(len(axistream_list)):
-        axistream_list[idx]['type'] = axistream_list_types[idx].strip('\n')
+            # if is axi stream definition
+            if parts[3] == "axis":
+                params['io_type'] = next(
+                    io_type for port_name, io_type, data_dim in io_list if port_name == params['port'])
+                params['datatype'] = next(
+                    data_dim for port_name, io_type, data_dim in io_list if port_name == params['port'])
+                axistream_list.append(params)
+            # if is axi master definition
+            if parts[3] == "m_axi":
+                aximaster_list.append(params)
 
-### GENERATOR ###
-from jinja2 import Environment, FileSystemLoader
+            # if is axi lite definition
+            elif parts[3] == "s_axilite":
+                # if is not return ip compute the address for each axilite
+                if any(aximaster['port'] == params['port'] for aximaster in aximaster_list):
+                    params['type'] = 'aximaster'
+                else:
+                    params['type'] = 'axilite'
+                if params['port'] != 'return':
+                    params['address'] = hex(BASE_ADDRESS)
+                    params['io_type'] = next(io_type for port_name, io_type, data_dim in io_list if port_name == params['port'])
+                    params['datatype'] = next(data_dim for port_name, io_type, data_dim in io_list if port_name == params['port'])
+                    if params['datatype'] and params['datatype'] == 64:
+                        BASE_ADDRESS += 0x10
+                    else:
+                        BASE_ADDRESS += 0x8
+                    axilite_list.append(params)
 
-template_folder = os.path.join(ROOT_DIR, 'python', 'templates')
-file_loader = FileSystemLoader(template_folder)
-env = Environment(loader=file_loader)
-template = env.get_template('template.txt')
-output = template.render(axilites=axilite_list, aximasters=aximaster_list, axistreams=axistream_list)
-# auto-ident shitty code generated by jinja
-formatted_code, _ = FormatCode(output)
-out_filename = 'out_' + str(function_name) + '.py'
-with open(os.path.join(ROOT_DIR, 'python', 'out', out_filename), "w") as text_file:
-    text_file.write(formatted_code)
+    ### GENERATOR ###
+    from jinja2 import Environment, FileSystemLoader
+
+    template_folder = os.path.join(ROOT_DIR, 'python', 'templates')
+    file_loader = FileSystemLoader(template_folder)
+    env = Environment(loader=file_loader)
+    template = env.get_template('template.txt')
+    output = template.render(axilites=axilite_list, aximasters=aximaster_list, axistreams=axistream_list)
+
+    # auto-ident shitty code generated by jinja
+    formatted_code, _ = FormatCode(output)
+    out_filename = str(function_name) + '.py'
+    with open(os.path.join(ROOT_DIR, 'python', 'out', out_filename), "w") as text_file:
+        text_file.write(formatted_code)
+    print("      DONE: " +out_filename)
