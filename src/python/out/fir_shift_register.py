@@ -67,12 +67,15 @@ class Fir_shift_register:
 
     def get_output_r_result(self):
         self.buff_output_r.invalidate()
+        return self.buff_output_r
 
     def get_signal_r_result(self):
         self.buff_signal_r.invalidate()
+        return self.buff_signal_r
 
     def get_coeff_result(self):
         self.buff_coeff.invalidate()
+        return self.buff_coeff
 
     def reset_output_r_result(self):
         del self.buff_output_r
@@ -89,6 +92,8 @@ class Fir_shift_register:
 
         self.prepare_coeff_buffer(data_coeff)
 
+        self.write_output_r_address()
+
         self.write_signal_r_address()
 
         self.write_coeff_address()
@@ -98,11 +103,5 @@ class Fir_shift_register:
         self.execute()
 
         self.get_output_r_result()
-
-        self.reset_output_r_result()
-
-        self.reset_signal_r_result()
-
-        self.reset_coeff_result()
 
         return 0, self.buff_output_r

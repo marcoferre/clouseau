@@ -65,12 +65,15 @@ class Iron:
 
     def get_input_img_result(self):
         self.buff_input_img.invalidate()
+        return self.buff_input_img
 
     def get_input_ref_result(self):
         self.buff_input_ref.invalidate()
+        return self.buff_input_ref
 
     def get_mutual_info_result(self):
         self.buff_mutual_info.invalidate()
+        return self.buff_mutual_info
 
     def reset_input_img_result(self):
         del self.buff_input_img
@@ -91,14 +94,10 @@ class Iron:
 
         self.write_input_ref_address()
 
+        self.write_mutual_info_address()
+
         self.execute()
 
         self.get_mutual_info_result()
-
-        self.reset_input_img_result()
-
-        self.reset_input_ref_result()
-
-        self.reset_mutual_info_result()
 
         return 0, self.buff_mutual_info

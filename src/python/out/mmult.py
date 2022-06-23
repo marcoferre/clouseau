@@ -75,12 +75,15 @@ class Mmult:
 
     def get_a_result(self):
         self.buff_a.invalidate()
+        return self.buff_a
 
     def get_b_result(self):
         self.buff_b.invalidate()
+        return self.buff_b
 
     def get_c_result(self):
         self.buff_c.invalidate()
+        return self.buff_c
 
     def reset_a_result(self):
         del self.buff_a
@@ -91,7 +94,17 @@ class Mmult:
     def reset_c_result(self):
         del self.buff_c
 
-    def compute_all(self, data_a_row, data_a_col, data_b_col):
+    def compute_all(self, data_a, data_b, data_a_row, data_a_col, data_b_col):
+
+        self.prepare_a_buffer(data_a)
+
+        self.prepare_b_buffer(data_b)
+
+        self.write_a_address()
+
+        self.write_b_address()
+
+        self.write_c_address()
 
         self.write_a_row(data_a_row)
 
@@ -101,16 +114,6 @@ class Mmult:
 
         self.execute()
 
-        self.get_a_result()
-
-        self.get_b_result()
-
         self.get_c_result()
 
-        self.reset_a_result()
-
-        self.reset_b_result()
-
-        self.reset_c_result()
-
-        return 0, self.buff_a, self.buff_b, self.buff_c
+        return 0, self.buff_c

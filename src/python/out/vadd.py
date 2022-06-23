@@ -65,12 +65,15 @@ class Vadd:
 
     def get_in1_result(self):
         self.buff_in1.invalidate()
+        return self.buff_in1
 
     def get_in2_result(self):
         self.buff_in2.invalidate()
+        return self.buff_in2
 
     def get_out_result(self):
         self.buff_out.invalidate()
+        return self.buff_out
 
     def reset_in1_result(self):
         del self.buff_in1
@@ -91,16 +94,12 @@ class Vadd:
 
         self.write_in2_address()
 
+        self.write_out_address()
+
         self.write_size(data_size)
 
         self.execute()
 
         self.get_out_result()
-
-        self.reset_in1_result()
-
-        self.reset_in2_result()
-
-        self.reset_out_result()
 
         return 0, self.buff_out

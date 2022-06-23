@@ -1,5 +1,5 @@
 //INTERFACES TEMPLATE
 //portname|in/out|datatype_dim(32, 64)
 input_img|in|32
-mutual_info|out|32
 input_ref|in|32
+mutual_info|out|32

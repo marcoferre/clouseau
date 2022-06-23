@@ -90,18 +90,23 @@ class Krnl_chain_mmult:
 
     def get_a_result(self):
         self.buff_a.invalidate()
+        return self.buff_a
 
     def get_b_result(self):
         self.buff_b.invalidate()
+        return self.buff_b
 
     def get_c_result(self):
         self.buff_c.invalidate()
+        return self.buff_c
 
     def get_d_result(self):
         self.buff_d.invalidate()
+        return self.buff_d
 
     def get_output_result(self):
         self.buff_output.invalidate()
+        return self.buff_output
 
     def reset_a_result(self):
         del self.buff_a
@@ -136,20 +141,12 @@ class Krnl_chain_mmult:
 
         self.write_d_address()
 
+        self.write_output_address()
+
         self.write_dim(data_dim)
 
         self.execute()
 
         self.get_output_result()
-
-        self.reset_a_result()
-
-        self.reset_b_result()
-
-        self.reset_c_result()
-
-        self.reset_d_result()
-
-        self.reset_output_result()
 
         return 0, self.buff_output

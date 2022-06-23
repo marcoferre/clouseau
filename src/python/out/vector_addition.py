@@ -70,12 +70,15 @@ class Vector_addition:
 
     def get_a_result(self):
         self.buff_a.invalidate()
+        return self.buff_a
 
     def get_b_result(self):
         self.buff_b.invalidate()
+        return self.buff_b
 
     def get_c_result(self):
         self.buff_c.invalidate()
+        return self.buff_c
 
     def reset_a_result(self):
         del self.buff_a
@@ -92,6 +95,8 @@ class Vector_addition:
 
         self.prepare_c_buffer(data_c)
 
+        self.write_a_address()
+
         self.write_b_address()
 
         self.write_c_address()
@@ -103,11 +108,5 @@ class Vector_addition:
         self.execute()
 
         self.get_a_result()
-
-        self.reset_a_result()
-
-        self.reset_b_result()
-
-        self.reset_c_result()
 
         return 0, self.buff_a

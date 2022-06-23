@@ -83,6 +83,7 @@ class {{ class_name }}:
     {% for aximaster in aximasters %}
     def get_{{aximaster.port}}_result(self):
         self.buff_{{aximaster.port}}.invalidate()
+        return self.buff_{{aximaster.port}}
     {% endfor %}
 
     {% for aximaster in aximasters %}
@@ -111,9 +112,7 @@ class {{ class_name }}:
         {%endfor %}
 
         {% for aximaster in aximasters %}
-        {% if aximaster.io_type == 'in' %}
         self.write_{{aximaster.port}}_address()
-        {% endif %}
         {% endfor %}
         {% for axilite in axilites %}
         {% if axilite.type=='axilite' and axilite.io_type=='in' %}
@@ -128,9 +127,6 @@ class {{ class_name }}:
         {% if aximaster.io_type == 'out' %}
         self.get_{{aximaster.port}}_result()
         {% endif %}
-        {% endfor %}
-        {% for aximaster in aximasters %}
-        self.reset_{{aximaster.port}}_result()
         {% endfor %}
 
         return 0{% for aximaster in aximasters %}{% if aximaster.io_type == 'out' %}, self.buff_{{aximaster.port}}{% endif %}{% endfor %}{% for axistream in axistreams%}{% if axistream.io_type == 'out' %}, self.buff_{{axistream.port}}{% endif %}{%endfor%}
