@@ -5,7 +5,7 @@ import numpy as np
 
 overlay = Overlay("./design_1_wrapper.bit")
 
-class Clouseau:
+class {{ class_name }}:
     def __init__(self, ip{% if axistreams|length > 0%} ,dma {%endif%}{% for aximaster in aximasters %}, size_{{aximaster.port}}{% endfor %}{% for aximaster in aximasters %}, data_type_{{aximaster.port}}{% endfor %}{% for axistream in axistreams %}, size_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, data_type_{{axistream.port}}{% endfor %}{% for axistream in axistreams %}, win_{{axistream.port}}{% endfor %}):
         self.ip = ip
         {% if axistreams|length > 0%}
