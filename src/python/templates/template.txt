@@ -74,7 +74,7 @@ class {{ class_name }}:
     {% endfor %}
 
     {% if axilites|length > 0 %}
-    def compute(self):
+    def execute(self):
         self.ip.write(self.AXILITES_ADDR_AP_CTRL, 1)
         while self.ip.read(self.AXILITES_ADDR_AP_CTRL) & 0x4 != 0x4:
             pass
@@ -89,3 +89,53 @@ class {{ class_name }}:
     def reset_{{aximaster.port}}_result(self):
         del self.buff_{{aximaster.port}}
     {% endfor %}
+
+    def compute_all(self{% for axilite in axilites%}{% if axilite.io_type == 'in' %}, data_{{axilite.port}}{% endif %}{%endfor%}{% for axistream in axistreams%}{% if axistream.io_type == 'in' %}, data_{{axistream.port}}{% endif %}{%endfor%}):
+        {% for aximaster in aximasters %}
+        {% if aximaster.io_type == 'in' %}
+        self.prepare_{{aximaster.port}}_buffer(data_{{aximaster.port}})
+        {% endif %}
+        {% endfor %}
+        {% for axistream in axistreams %}
+        {% if axistream.io_type == 'in' %}
+        self.prepare_{{axistream.port}}_buffer(data_{{axistream.port}})
+        {% endif %}
+        {%endfor %}
+        {% for axistream in axistreams %}
+        {% if axistream.io_type == 'in' %}
+        self.send_buffer_{{axistream.port}}()
+        {% endif %}
+        {% if axistream.io_type == 'out' %}
+        self.recv_buffer_{{axistream.port}}()
+        {% endif %}
+        {%endfor %}
+
+        {% for aximaster in aximasters %}
+        {% if aximaster.io_type == 'in' %}
+        self.write_{{aximaster.port}}_address()
+        {% endif %}
+        {% endfor %}
+        {% for axilite in axilites %}
+        {% if axilite.type=='axilite' and axilite.io_type=='in' %}
+        self.write_{{axilite.port}}(data_{{axilite.port}})
+        {% endif %}
+        {% endfor %}
+        {% if axilites|length > 0 %}
+        self.execute()
+        {% endif%}
+
+        {% for aximaster in aximasters %}
+        {% if aximaster.io_type == 'out' %}
+        self.get_{{aximaster.port}}_result()
+        {% endif %}
+        {% endfor %}
+        {% for aximaster in aximasters %}
+        self.reset_{{aximaster.port}}_result()
+        {% endfor %}
+
+        return 0{% for aximaster in aximasters %}{% if aximaster.io_type == 'out' %}, self.buff_{{aximaster.port}}{% endif %}{% endfor %}{% for axistream in axistreams%}{% if axistream.io_type == 'out' %}, self.buff_{{axistream.port}}{% endif %}{%endfor%}
+
+
+
+
+
