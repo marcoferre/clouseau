@@ -1,74 +1,3 @@
-/**********
-Copyright (c) 2019, Xilinx, Inc.
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors
-may be used to endorse or promote products derived from this software
-without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED.
-IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE,
-EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-**********/
-
-/*******************************************************************************
-
-Vitis Key Concept :
-
-    This is a matrix multiplication example which showcases the "Systolic Array"
-    based algorithm design. Systolic array type of implementation is well suited
-    for FPGAs.
-
-*******************************************************************************/
-
-/*
-
-Kernel Description :
-
-    This kernel is a systolic array based matrix multiplication. Though the
-    maximum size of the input matrices are restricted to a smaller MAX_SIZE, it
-    is still possible to use this approach and get better performance for larger
-    matrices by using tiling.
-
-    Arguments :
-
-        int *a     (input )  --> Input  Matrix A
-        int *b     (input )  --> Input  Matrix B
-        int *c     (output)  --> Output Matrix
-        int  a_row (input )  --> Row Size Matrix A
-        int  a_col (input )  --> Col Size Matrix A
-        int  b_col (input )  --> Col Size Matrix B
-
-    Kernel Configuration :
-
-        Max Size    --> 16
-
-    Note :
-        Max Size is dependent on the available DSP resources in the FPGA
-*/
-
 #include <stdio.h>
 
 // Maximum Array Size
@@ -78,24 +7,18 @@ Kernel Description :
 const unsigned int c_size = MAX_SIZE;
 
 extern "C" {
-void mmult(const int *a, // Read-Only Matrix A
-           const int *b, // Read-Only Matrix B
-           int *c,       // Output Result
-           int a_row,    // Matrix A Row Size
-           int a_col,    // Matrix A Col Size
-           int b_col     // Matrix B Col Size
-           ) {
-#pragma HLS INTERFACE m_axi port = a offset = slave bundle = gmem
-#pragma HLS INTERFACE m_axi port = b offset = slave bundle = gmem
-#pragma HLS INTERFACE m_axi port = c offset = slave bundle = gmem
+void mmult(const int *a, const int *b, int *c, int a_row, int a_col, int b_col) {
+#pragma HLS INTERFACE m_axi port=a offset=slave bundle=gmem
+#pragma HLS INTERFACE m_axi port=b offset=slave bundle=gmem
+#pragma HLS INTERFACE m_axi port=c offset=slave bundle=gmem
 
-#pragma HLS INTERFACE s_axilite port = a bundle = control
-#pragma HLS INTERFACE s_axilite port = b bundle = control
-#pragma HLS INTERFACE s_axilite port = c bundle = control
-#pragma HLS INTERFACE s_axilite port = a_row bundle = control
-#pragma HLS INTERFACE s_axilite port = a_col bundle = control
-#pragma HLS INTERFACE s_axilite port = b_col bundle = control
-#pragma HLS INTERFACE s_axilite port = return bundle = control
+#pragma HLS INTERFACE s_axilite port=a bundle=control
+#pragma HLS INTERFACE s_axilite port=b bundle=control
+#pragma HLS INTERFACE s_axilite port=c bundle=control
+#pragma HLS INTERFACE s_axilite port=a_row bundle=control
+#pragma HLS INTERFACE s_axilite port=a_col bundle=control
+#pragma HLS INTERFACE s_axilite port=b_col bundle=control
+#pragma HLS INTERFACE s_axilite port=return bundle=control
 
   int b_row = a_col;
   int c_row = a_row;

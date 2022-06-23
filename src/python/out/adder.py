@@ -8,8 +8,7 @@ overlay = Overlay("./design_1_wrapper.bit")
 
 class Clouseau:
 
-    def __init__(self, overlay, ip):
-        self.overlay = overlay
+    def __init__(self, ip):
         self.ip = ip
 
         self.AXILITES_ADDR_AP_CTRL = 0x00

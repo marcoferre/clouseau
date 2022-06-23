@@ -6,15 +6,15 @@ import re
 import glob
 
 ROOT_DIR = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-path = ROOT_DIR +"\\hls\\**\\*.cpp"
+path = ROOT_DIR + "\\hls\\**\\*.cpp"
 
 for path in glob.glob(path, recursive=True):
     p = Path(path)
     ip_filename = path
     print('RUN ' + ip_filename)
 
-    #ip_filename = os.path.join(ROOT_DIR, 'hls', 'aximaster', 'vector_addition.cpp')
-    #ip_filename = os.path.join(ROOT_DIR, 'hls', 'axistream', 'moving_average.cpp')
+    # ip_filename = os.path.join(ROOT_DIR, 'hls', 'aximaster', 'vector_addition.cpp')
+    # ip_filename = os.path.join(ROOT_DIR, 'hls', 'axistream', 'moving_average.cpp')
     io_template_filename = os.path.join(p.parent, 'io_template')
 
     if not exists(io_template_filename):
@@ -28,7 +28,7 @@ for path in glob.glob(path, recursive=True):
     io_template = io_template_file.readlines()
 
     io_list = []
-    #parse io template file
+    # parse io template file
     for line in io_template:
         if line[0:2] == "//" or line == '\n':
             continue
@@ -45,8 +45,9 @@ for path in glob.glob(path, recursive=True):
         if line[0:2] == "//":
             continue
 
-        #regex to parse C++ function definition
-        result = re.search(r"^((\w+[\(\w+\)]([ |\t]+)?(\\R)?){2,})(\([^!@#;$+%^]+?([ |\t]+)?(\\R)?\))(( +)?([ |\t]+)?(\\R)?\{)", line)
+        # regex to parse C++ function definition
+        result = re.search(
+            r"^((\w+[\(\w+\)]([ |\t]+)?(\\R)?){2,})(\([^!@#;$+%^]+?([ |\t]+)?(\\R)?\))(( +)?([ |\t]+)?(\\R)?\{)", line)
         if result:
             groups = result.groups()
             function_name = groups[1]
@@ -83,8 +84,10 @@ for path in glob.glob(path, recursive=True):
                     params['type'] = 'axilite'
                 if params['port'] != 'return':
                     params['address'] = hex(BASE_ADDRESS)
-                    params['io_type'] = next(io_type for port_name, io_type, data_dim in io_list if port_name == params['port'])
-                    params['datatype'] = next(data_dim for port_name, io_type, data_dim in io_list if port_name == params['port'])
+                    params['io_type'] = next(
+                        io_type for port_name, io_type, data_dim in io_list if port_name == params['port'])
+                    params['datatype'] = next(
+                        data_dim for port_name, io_type, data_dim in io_list if port_name == params['port'])
                     if params['datatype'] and params['datatype'] == 64:
                         BASE_ADDRESS += 0x10
                     else:
@@ -105,4 +108,4 @@ for path in glob.glob(path, recursive=True):
     out_filename = str(function_name) + '.py'
     with open(os.path.join(ROOT_DIR, 'python', 'out', out_filename), "w") as text_file:
         text_file.write(formatted_code)
-    print("      DONE: " +out_filename)
+    print("      DONE: " + out_filename)

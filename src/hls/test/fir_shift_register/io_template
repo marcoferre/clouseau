@@ -1,0 +1,6 @@
+//INTERFACES TEMPLATE
+//portname|in/out|datatype_dim(32, 64)
+output_r|out|32
+signal_r|in|32
+coeff|in|32
+signal_length|in|32
