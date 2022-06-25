@@ -129,4 +129,4 @@ class Vector_addition:
 
         self.get_a_result()
 
-        return self.buff_a,
+        return self.buff_a

@@ -123,4 +123,4 @@ class Fir_shift_register:
 
         self.get_output_r_result()
 
-        return self.buff_output_r,
+        return self.buff_output_r
